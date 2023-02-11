@@ -43,7 +43,9 @@ ostream &operator<<(ostream &out, const QueryResult &qres) {
 }
 
 QueryResult::~QueryResult() {
-    // FIXME
+    delete this->column_names;
+    delete this->column_attributes;
+    delete this->rows;
 }
 
 
@@ -71,7 +73,16 @@ QueryResult *SQLExec::execute(const SQLStatement *statement) {
 
 void
 SQLExec::column_definition(const ColumnDefinition *col, Identifier &column_name, ColumnAttribute &column_attribute) {
-    throw SQLExecError("not implemented");  // FIXME
+    column_name = col->name;
+    switch(col->type){
+        case ColumnDefinition::DataType::INT:
+            column_attribute = ColumnAttributes::DataType::INT;
+            break;
+        case ColumnDefinition::DataType::TEXT:
+            column_attribute = ColumnAttributes::DataType::TEXT;
+            break;
+
+    }
 }
 
 QueryResult *SQLExec::create(const CreateStatement *statement) {
