@@ -50,6 +50,9 @@ QueryResult::~QueryResult() {
 QueryResult *SQLExec::execute(const SQLStatement *statement) {
     // FIXME: initialize _tables table, if not yet present
 
+    initialize_schema_tables();
+
+
     try {
         switch (statement->type()) {
             case kStmtCreate:
@@ -72,7 +75,41 @@ SQLExec::column_definition(const ColumnDefinition *col, Identifier &column_name,
 }
 
 QueryResult *SQLExec::create(const CreateStatement *statement) {
-    return new QueryResult("not implemented"); // FIXME
+    ValueDict row = {};
+    row["table_name"] = Value(statement->tableName);
+    Handle handle = tables->insert(&row);
+
+    try {
+        Handles handles;
+        DbRelation& columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
+        try {
+            for (ColumnDefinition* column : *statement->columns) {
+                Identifier columnName;
+                ColumnAttribute columnAttribute;
+                column_definition(column, columnName, columnAttribute);
+
+                row["column_name"] = columnName;
+                row["table_name"] = Value(statement->tableName);
+                row["data_type"] =  Value(columnAttribute.get_data_type() == ColumnAttribute::INT ? "INT" : "TEXT");
+
+                handles.push_back(columns.insert(&row));
+            }
+
+            DbRelation& table = SQLExec::tables->get_table(statement->tableName);
+            
+            if (statement->ifNotExists) {
+                table.create_if_not_exists();
+            } else {
+                table.create();
+            }
+        } catch (exception &e) {
+            // Error
+        }
+    } catch (exception &e) {
+        // Error
+    }
+
+    return new QueryResult("created " + string(statement->tableName)); // FIXME
 }
 
 // DROP ...
@@ -81,7 +118,14 @@ QueryResult *SQLExec::drop(const DropStatement *statement) {
 }
 
 QueryResult *SQLExec::show(const ShowStatement *statement) {
-    return new QueryResult("not implemented"); // FIXME
+    switch(statement->type) {
+        case ShowStatement::kTables:
+            return show_tables();
+        case ShowStatement::kColumns:
+            return show_columns(statement);
+        default:
+            return new QueryResult("not implemented");
+    }
 }
 
 QueryResult *SQLExec::show_tables() {
