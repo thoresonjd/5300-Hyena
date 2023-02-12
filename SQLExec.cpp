@@ -104,14 +104,18 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
         switch (columnAttribute.get_data_type()) {
             case ColumnAttribute::INT:
                 row["data_type"] = Value("INT");
+                break;
             case ColumnAttribute::TEXT:
                 row["data_type"] = Value("TEXT");
+                break;
+            default:
+                throw new DbException("Unsupported data type");
         }
 
         handles.push_back(columns.insert(&row));
     }
 
-    SQLExec::tables->get_table(statement->tableName).create();
+    tables->get_table(statement->tableName).create();
 
     return new QueryResult("created " + string(statement->tableName)); // FIXME
 }
@@ -122,11 +126,22 @@ QueryResult *SQLExec::drop(const DropStatement *statement) {
         throw DbRelationError("Cannot drop a schema table!");
     }
 
-    // Get the table & columns
-    DbRelation& table = SQLExec::tables->get_table(statement->name);
-    table.drop();
+    // Get columns
+    ValueDict where;
+    where["table_name"] = Value(statement->name);
+    DbRelation& columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
+    Handles* handles = columns.select(&where);
+    
+    // Delete columns
+    for (Handle handle: *handles) {
+        columns.del(handle);
+    }
 
-    // TODO: remove from schemas
+    // Drop table
+    tables->get_table(statement->name).drop();
+
+    // Delete table
+    tables->del(*SQLExec::tables->select(&where)->begin());
 
     return new QueryResult(nullptr, nullptr, nullptr, "dropped " + string(statement->name));
 }
