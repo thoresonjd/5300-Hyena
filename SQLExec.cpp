@@ -90,6 +90,17 @@ void SQLExec::column_definition(const ColumnDefinition *col, Identifier &column_
 }
 
 QueryResult *SQLExec::create(const CreateStatement *statement) {
+    switch (statement->type) {
+    case CreateStatement::kTable:
+        return create_table(statement);
+    case CreateStatement::kIndex:
+        return create_table(statement);
+    default:
+        return new QueryResult("not implemented");
+    }
+}
+
+QueryResult *SQLExec::create_table(const CreateStatement *statement) {
     ValueDict row = {};
     row["table_name"] = Value(statement->tableName);
     tables->insert(&row);
@@ -120,11 +131,42 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
 
     tables->get_table(statement->tableName).create();
 
-    return new QueryResult("created " + string(statement->tableName)); // FIXME
+    return new QueryResult("created " + string(statement->tableName));
+}
+
+QueryResult *SQLExec::create_index(const CreateStatement * statement) {
+    DbRelation &table = tables->get_table(statement->tableName);
+
+    ValueDict row;
+    row["table_name"] = Value(statement->tableName);
+    row["index_name"] = Value(statement->indexName);
+    row["index_type"] = Value(statement->indexType);
+    row["is_unique"] = Value(statement->indexType == "BTREE");
+
+    for (Identifier columnName : *statement->indexColumns) {
+        row["columnName"] = Value(columnName);
+        row["seq_in_index"].n += 1;
+        indices->insert(&row);
+    }
+    
+    indices->get_index(statement->tableName, statement->indexName).create();
+
+    return new QueryResult("created index " + string(statement->indexName));
 }
 
 // DROP ...
 QueryResult *SQLExec::drop(const DropStatement *statement) {
+    switch(statement->type) {
+        case DropStatement::kTable:
+            return drop_table(statement);
+        case DropStatement::kIndex:
+            return drop_index(statement);
+        default:
+            return new QueryResult("not implemented");
+    }
+}
+
+QueryResult *SQLExec::drop_table(const DropStatement *statement) {
     if (statement->name == Tables::TABLE_NAME || statement->name == Columns::TABLE_NAME) {
         throw DbRelationError("Cannot drop a schema table!");
     }
@@ -147,6 +189,10 @@ QueryResult *SQLExec::drop(const DropStatement *statement) {
     tables->del(*SQLExec::tables->select(&where)->begin());
 
     return new QueryResult(nullptr, nullptr, nullptr, "dropped " + string(statement->name));
+}
+
+QueryResult *SQLExec::drop_index(const DropStatement *statement) {
+    return new QueryResult("not implemented");
 }
 
 QueryResult *SQLExec::show(const ShowStatement *statement) {
