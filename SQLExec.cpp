@@ -197,7 +197,32 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
 }
 
 QueryResult *SQLExec::show_index(const ShowStatement *statement) {
-     return new QueryResult("show index not implemented"); // FIXME
+    ColumnNames* columnNames = new ColumnNames();
+    columnNames->push_back("table_name");
+    columnNames->push_back("index_name");
+    columnNames->push_back("column_name");
+    columnNames->push_back("seq_in_index");
+    columnNames->push_back("index_type");
+    columnNames->push_back("is_unique");
+
+    ColumnAttributes* columnAttributes = new ColumnAttributes();
+    columnAttributes->push_back(ColumnAttribute::TEXT);
+    columnAttributes->push_back(ColumnAttribute::TEXT);
+    columnAttributes->push_back(ColumnAttribute::TEXT);
+    columnAttributes->push_back(ColumnAttribute::INT);
+    columnAttributes->push_back(ColumnAttribute::TEXT);
+    columnAttributes->push_back(ColumnAttribute::BOOLEAN);
+
+    ValueDict where;
+    where["table_name"] = string(statement->tableName);
+    Handles* handles = indices->select(&where);
+
+    ValueDicts* rows = new ValueDicts();
+    for (Handle handle: *handles) {
+        rows->push_back(indices->project(handle, columnNames));
+    }
+
+    return new QueryResult(columnNames, columnAttributes, rows, "successfully returned " + to_string(rows->size()) + " rows");
 }
 
 QueryResult *SQLExec::drop_index(const DropStatement *statement) {
