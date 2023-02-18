@@ -191,10 +191,6 @@ QueryResult *SQLExec::drop_table(const DropStatement *statement) {
     return new QueryResult(nullptr, nullptr, nullptr, "dropped " + string(statement->name));
 }
 
-QueryResult *SQLExec::drop_index(const DropStatement *statement) {
-    return new QueryResult("not implemented");
-}
-
 QueryResult *SQLExec::show(const ShowStatement *statement) {
     switch(statement->type) {
         case ShowStatement::kTables:
