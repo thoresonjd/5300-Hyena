@@ -268,5 +268,18 @@ QueryResult *SQLExec::show_index(const ShowStatement *statement) {
 }
 
 QueryResult *SQLExec::drop_index(const DropStatement *statement) {
-    return new QueryResult("drop index not implemented");  // FIXME
+    // drop the index
+    indices->get_index(statement->name, statement->indexName).drop();
+    
+    ValueDict where; 
+    where["table_name"] = Value(statement->name);
+    where["index_name"] = Value(statement->indexName);
+
+    Handles *select = indices->select(&where);
+    
+    for (Handle &row : *select)
+        indices->del(row);
+    delete select;
+
+    return new QueryResult("dropped index " + string(statement->indexName));
 }
