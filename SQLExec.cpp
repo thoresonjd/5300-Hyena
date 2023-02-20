@@ -10,6 +10,7 @@ using namespace hsql;
 
 // define static data
 Tables *SQLExec::tables = nullptr;
+Indices *SQLExec::indices = nullptr;
 
 // make query result be printable
 ostream &operator<<(ostream &out, const QueryResult &qres) {
@@ -58,6 +59,9 @@ QueryResult *SQLExec::execute(const SQLStatement *statement) {
         tables = new Tables();
     }
 
+    if (indices == nullptr) {
+        indices == new Indices();
+    }
 
     try {
         switch (statement->type()) {
@@ -94,7 +98,7 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
     case CreateStatement::kTable:
         return create_table(statement);
     case CreateStatement::kIndex:
-        return create_table(statement);
+        return create_index(statement);
     default:
         return new QueryResult("not implemented");
     }
@@ -135,8 +139,6 @@ QueryResult *SQLExec::create_table(const CreateStatement *statement) {
 }
 
 QueryResult *SQLExec::create_index(const CreateStatement * statement) {
-    DbRelation &table = tables->get_table(statement->tableName);
-
     ValueDict row;
     row["table_name"] = Value(statement->tableName);
     row["index_name"] = Value(statement->indexName);
@@ -146,7 +148,7 @@ QueryResult *SQLExec::create_index(const CreateStatement * statement) {
     for (Identifier columnName : *statement->indexColumns) {
         row["columnName"] = Value(columnName);
         row["seq_in_index"].n += 1;
-        indices->insert(&row);
+        SQLExec::indices->insert(&row);
     }
     
     indices->get_index(statement->tableName, statement->indexName).create();
@@ -197,6 +199,8 @@ QueryResult *SQLExec::show(const ShowStatement *statement) {
             return show_tables();
         case ShowStatement::kColumns:
             return show_columns(statement);
+        case ShowStatement::kIndex:
+            return show_index(statement);
         default:
             return new QueryResult("not implemented");
     }

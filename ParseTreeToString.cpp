@@ -240,7 +240,7 @@ string ParseTreeToString::create(const CreateStatement *stmt) {
     } else {
         ret += "...";
     }
-        return ret;
+    return ret;
 }
 
 string ParseTreeToString::drop(const DropStatement *stmt) {

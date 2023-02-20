@@ -140,7 +140,6 @@ void Tables::get_columns(Identifier table_name, ColumnNames &column_names, Colum
             throw DbRelationError("Unknown data type");
         column_attribute.set_data_type(data_type);
 
-        column_attribute.set_data_type((*row)["data_type"].s == "INT" ? ColumnAttribute::INT : ColumnAttribute::TEXT);
         column_attributes.push_back(column_attribute);
 
         delete row;
