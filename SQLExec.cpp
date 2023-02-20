@@ -60,7 +60,7 @@ QueryResult *SQLExec::execute(const SQLStatement *statement) {
     }
 
     if (indices == nullptr) {
-        indices == new Indices();
+        indices = new Indices();
     }
 
     try {
