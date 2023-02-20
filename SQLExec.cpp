@@ -146,7 +146,7 @@ QueryResult *SQLExec::create_index(const CreateStatement * statement) {
     row["is_unique"] = Value(statement->indexType == "BTREE");
 
     for (Identifier columnName : *statement->indexColumns) {
-        row["columnName"] = Value(columnName);
+        row["column_name"] = Value(columnName);
         row["seq_in_index"].n += 1;
         SQLExec::indices->insert(&row);
     }
