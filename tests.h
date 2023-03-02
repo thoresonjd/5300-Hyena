@@ -299,6 +299,7 @@ bool test_heap_storage() {
     return true;
 }
 
+
 /*
  * ****************************
  * SQLExec tests

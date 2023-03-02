@@ -141,7 +141,32 @@ ValueDict* get_where_conjunction(const Expr* where) {
 
 
 QueryResult* SQLExec::del(const DeleteStatement* statement) {
-    return new QueryResult("DELETE statement not yet implemented");  // FIXME
+    Identifier table_name = statement->tableName;
+    DbRelation& table = SQLExec::tables->get_table(table_name);
+
+    // start base of plan at a TableScan
+    EvalPlan* plan = new EvalPlan(table);
+
+    // enclose in selection if expression exists
+    if (statement->expr)
+        plan = new EvalPlan(get_where_conjunction(statement->expr), plan);
+
+    // optimize
+    plan = plan->optimize();
+
+    // get handles to remove tuples from table and indices
+    Handles* handles = plan->pipeline().second;
+    IndexNames indices = SQLExec::indices->get_index_names(table_name);
+    for (const Handle& handle : *handles) {
+        for (const Identifier& index : indices)
+            SQLExec::indices->get_index(table_name, index).del(handle);
+        table.del(handle);
+    }
+
+    size_t rows_n = handles->size();
+    size_t indices_n = indices.size();
+    string suffix = indices_n ? " and from " + to_string(indices_n) + (indices_n > 1 ? " indices" : " index") : "";
+    return new QueryResult("successfully deleted " + to_string(rows_n) + " rows" + suffix);
 }
 
 QueryResult* SQLExec::select(const SelectStatement* statement) {
