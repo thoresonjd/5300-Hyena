@@ -2,11 +2,13 @@
  * @file HeapTable.h - Implementation of storage_engine with a heap file structure.
  * HeapTable: DbRelation
  *
- * @author Kevin Lundeen
+ * @authors Kevin Lundeen, Justin Thoreson
  * @see "Seattle University, CPSC5300, Winter 2023"
  */
+
 #pragma once
 
+#include <string>
 #include "storage_engine.h"
 #include "SlottedPage.h"
 #include "HeapFile.h"
@@ -14,60 +16,141 @@
 /**
  * @class HeapTable - Heap storage engine (implementation of DbRelation)
  */
-
 class HeapTable : public DbRelation {
 public:
+    /**
+     * Constructor
+     * @param table_name
+     * @param column_names
+     * @param column_attributes
+     */
     HeapTable(Identifier table_name, ColumnNames column_names, ColumnAttributes column_attributes);
 
     virtual ~HeapTable() {}
 
-    HeapTable(const HeapTable &other) = delete;
+    HeapTable(const HeapTable& other) = delete;
 
-    HeapTable(HeapTable &&temp) = delete;
+    HeapTable(HeapTable&& temp) = delete;
 
-    HeapTable &operator=(const HeapTable &other) = delete;
+    HeapTable& operator=(const HeapTable& other) = delete;
 
-    HeapTable &operator=(HeapTable &&temp) = delete;
+    HeapTable& operator=(HeapTable&& temp) = delete;
 
+    /**
+     * Creates the HeapTable relation
+     */
     virtual void create();
 
+    /** 
+     * Creates the HeapTable relation if it doesn't already exist
+     */ 
     virtual void create_if_not_exists();
 
+    /**
+     * Drops the HeapTable relation
+     */
     virtual void drop();
 
+    /**
+     * Opens the HeapTable relation
+     */
     virtual void open();
 
+    /**
+     * Closes the HeapTable relation
+     */
     virtual void close();
 
-    virtual Handle insert(const ValueDict *row);
+    /**
+     * Inserts a data tuple into the table
+     * @param row The data tuple to insert
+     * @return A handle locating the block ID and record ID of the inserted tuple
+     */
+    virtual Handle insert(const ValueDict* row);
 
-    virtual void update(const Handle handle, const ValueDict *new_values);
+    /**
+     * Updates a record to a database
+     * @param handle The location (block ID, record ID) of the record
+     * @param new_values The new fields to replace the existing fields with
+     */
+    virtual void update(const Handle handle, const ValueDict* new_values);
 
+    /**
+     * Deletes a row from the table using the given handle for the row
+     * @param handle The handle for the row being deleted
+     */
     virtual void del(const Handle handle);
 
-    virtual Handles *select();
+    /**
+     * Select all data tuples (rows) from the table
+     */
+    virtual Handles* select();
 
-    virtual Handles *select(const ValueDict *where);
+    /**
+     * Selects data tuples (rows) from the table matching given predicates
+     * @param where The where-clause predicates
+     * @return Handles locating the block IDs and record IDs of the matching rows
+     */
+    virtual Handles* select(const ValueDict* where);
 
-    virtual ValueDict *project(Handle handle);
+    /**
+     * Refine another selection
+     * @param current_selection range of handles to filter
+     * @param where             predicates to match
+     * @return                  list of handles of the selected rows
+     */
+    virtual Handles* select(Handles* current_selection, const ValueDict* where);
 
-    virtual ValueDict *project(Handle handle, const ColumnNames *column_names);
+    /**
+     * Return a sequence of all values for handle (SELECT *).
+     * @param handle Location of row to get values from
+     * @returns Dictionary of values from row (keyed by all column names)
+     */
+    virtual ValueDict* project(Handle handle);
+
+    /**
+     * Return a sequence of values for handle given by column_names
+     * @param handle Location of row to get values from
+     * @param column_names List of column names to project
+     * @returns Dictionary of values from row (keyed by column_names)
+     */
+    virtual ValueDict* project(Handle handle, const ColumnNames* column_names);
 
     using DbRelation::project;
 
 protected:
     HeapFile file;
 
-    virtual ValueDict *validate(const ValueDict *row) const;
+    /**
+     * Checks if a row is valid to the table
+     * @param row The data tuple to validate
+     * @return The fully validated data tuple
+     */
+    virtual ValueDict* validate(const ValueDict* row) const;
 
-    virtual Handle append(const ValueDict *row);
+    /**
+     * Writes a data tuple to the database file
+     * @param row The data tuple to add
+     * @return A handle locating the block ID and record ID of the written tuple
+     */
+    virtual Handle append(const ValueDict* row);
 
-    virtual Dbt *marshal(const ValueDict *row) const;
+    /**
+     * Return the bits to go into the file. Caller responsible for freeing the
+     * returned Dbt and its enclosed ret->get_data().
+     */
+    virtual Dbt* marshal(const ValueDict* row) const;
+    
+    /**
+     * Converts data bytes into concrete types
+     */
+    virtual ValueDict* unmarshal(Dbt* data) const;
 
-    virtual ValueDict *unmarshal(Dbt *data) const;
-
-    virtual bool selected(Handle handle, const ValueDict *where);
+    /**
+     * See if the row at the given handle satisfies the given where clause
+     * @param handle  row to check
+     * @param where   conditions to check
+     * @return        true if conditions met, false otherwise
+     */
+    virtual bool selected(Handle handle, const ValueDict* where);
 };
-
-bool test_heap_storage();
-

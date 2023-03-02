@@ -1,89 +1,108 @@
 /**
  * @file sql5300.cpp - main entry for the relation manager's SQL shell
- * @author Kevin Lundeen
+ * @authors Kevin Lundeen, Justin Thoreson
  * @see "Seattle University, CPSC5300, Winter 2023"
  */
+
 #include <cstdlib>
 #include <iostream>
 #include <string>
 #include "db_cxx.h"
-#include "SQLParser.h"
 #include "ParseTreeToString.h"
 #include "SQLExec.h"
+#include "tests.h"
 
 using namespace std;
 using namespace hsql;
 
-/*
- * we allocate and initialize the _DB_ENV global
- */
-void initialize_environment(char *envHome);
+DbEnv* _DB_ENV; // Global DB environment
+const u_int32_t ENV_FLAGS = DB_CREATE | DB_INIT_MPOOL;
+const std::string TEST = "test", QUIT = "quit";
 
+/**
+ * Establishes a database environment
+ * @param envDir The database environment directory
+ */
+void initDbEnv(string);
+
+/**
+ * Runs the SQL shell loop and listens for queries
+ */
+void runSQLShell();
+
+/**
+ * Processes a single SQL query
+ * @param sql A SQL query (or queries) to process
+ */
+void handleSQL(string);
+
+/**
+ * Processes SQL statements within a parsed query
+ * @param parsedSQL A pointer to a parsed SQL query
+ */
+void handleStatements(SQLParserResult*);
 
 /**
  * Main entry point of the sql5300 program
  * @args dbenvpath  the path to the BerkeleyDB database environment
  */
-int main(int argc, char *argv[]) {
-
-    // Open/create the db environment
+int main(int argc, char** argv) {
     if (argc != 2) {
-        cerr << "Usage: cpsc5300: dbenvpath" << endl;
+        cerr << "USAGE: " << argv[0] << " [db_environment]\n";
         return EXIT_FAILURE;
     }
-    initialize_environment(argv[1]);
-
-    // Enter the SQL shell loop
-    while (true) {
-        cout << "SQL> ";
-        string query;
-        getline(cin, query);
-        if (query.length() == 0)
-            continue;  // blank line -- just skip
-        if (query == "quit")
-            break;  // only way to get out
-        if (query == "test") {
-            cout << "test_heap_storage: " << (test_heap_storage() ? "ok" : "failed") << endl;
-            continue;
-        }
-
-        // parse and execute
-        SQLParserResult *parse = SQLParser::parseSQLString(query);
-        if (!parse->isValid()) {
-            cout << "invalid SQL: " << query << endl;
-            cout << parse->errorMsg() << endl;
-        } else {
-            for (uint i = 0; i < parse->size(); ++i) {
-                const SQLStatement *statement = parse->getStatement(i);
-                try {
-                    cout << ParseTreeToString::statement(statement) << endl;
-                    QueryResult *result = SQLExec::execute(statement);
-                    cout << *result << endl;
-                    delete result;
-                } catch (SQLExecError &e) {
-                    cout << "Error: " << e.what() << endl;
-                }
-            }
-        }
-        delete parse;
-    }
+    initDbEnv(argv[1]);
+    runSQLShell();
     return EXIT_SUCCESS;
 }
 
-DbEnv *_DB_ENV;
-
-void initialize_environment(char *envHome) {
+void initDbEnv(string envHome) {
     cout << "(sql5300: running with database environment at " << envHome << ")" << endl;
-
-    DbEnv *env = new DbEnv(0U);
-    env->set_message_stream(&cout);
-    env->set_error_stream(&cerr);
+    _DB_ENV = new DbEnv(0U);
+    _DB_ENV->set_message_stream(&cout);
+    _DB_ENV->set_error_stream(&cerr);
     try {
-        env->open(envHome, DB_CREATE | DB_INIT_MPOOL, 0);
-    } catch (DbException &exc) {
-        cerr << "(sql5300: " << exc.what() << ")" << endl;
-        exit(1);
+        _DB_ENV->open(envHome.c_str(), ENV_FLAGS, 0);
+    } catch (DbException& e) {
+        cerr << "(sql5300: " << e.what() << ")" << endl;
+        exit(EXIT_FAILURE);
     }
-    _DB_ENV = env;
     initialize_schema_tables();
+}
+
+void runSQLShell() {
+    std::string sql = "";
+    while (sql != QUIT) {
+        std::cout << "SQL> ";
+        std::getline(std::cin, sql);
+        handleSQL(sql);
+    }
+}
+
+void handleSQL(std::string sql) {
+    if (sql == QUIT || !sql.length()) return;
+    SQLParserResult* const parsedSQL = SQLParser::parseSQLString(sql);
+    if (parsedSQL->isValid())
+        handleStatements(parsedSQL);
+    else if (sql == TEST) {
+        cout << "test_heap_storage: " << (test_heap_storage() ? "Passed" : "Failed") << endl;
+        cout << "test_sql_exec: " << (test_sql_exec() ? "Passed" : "Failed") << endl;
+    } else
+        cerr << "invalid SQL: " << sql << endl << parsedSQL->errorMsg() << endl;
+    delete parsedSQL;
+}
+
+void handleStatements(hsql::SQLParserResult* parsedSQL) {
+    size_t nStatements = parsedSQL->size();
+    for (size_t i = 0; i < nStatements; ++i) {
+        const SQLStatement* statement = parsedSQL->getStatement(i);
+        try {
+            cout << ParseTreeToString::statement(statement) << endl;
+            QueryResult* result = SQLExec::execute(statement);
+            cout << *result << endl;
+            delete result;
+        } catch (SQLExecError& e) {
+            cerr << "Error: " << e.what() << endl;
+        }
+    }
 }

@@ -1,5 +1,3 @@
-sql5300
-
 # Prerequisites
 *.d
 
@@ -32,3 +30,9 @@ sql5300
 *.exe
 *.out
 *.app
+
+# Specific executable to ignore
+sql5300
+
+# VSCode settings
+.vscode

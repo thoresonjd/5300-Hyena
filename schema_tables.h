@@ -39,7 +39,7 @@ public:
     // HeapTable overrides
     virtual void create();
 
-    virtual Handle insert(const ValueDict *row);
+    virtual Handle insert(const ValueDict* row);
 
     virtual void del(Handle handle);
 
@@ -51,27 +51,27 @@ public:
      * @param column_attributes  returned by reference: list of corresponding
      *                           attributes for column_names
      */
-    static void get_columns(Identifier table_name, ColumnNames &column_names, ColumnAttributes &column_attributes);
+    static void get_columns(Identifier table_name, ColumnNames& column_names, ColumnAttributes& column_attributes);
 
     /**
      * Get the correctly instantiated DbRelation for a given table.
      * @param table_name  table to get
      * @returns           instantiated DbRelation of the correct type
      */
-    static DbRelation &get_table(Identifier table_name);
+    static DbRelation& get_table(Identifier table_name);
 
 protected:
     // hard-coded columns for _tables table
-    static ColumnNames &COLUMN_NAMES();
+    static ColumnNames& COLUMN_NAMES();
 
-    static ColumnAttributes &COLUMN_ATTRIBUTES();
+    static ColumnAttributes& COLUMN_ATTRIBUTES();
 
     // keep a reference to the columns table (for get_columns method)
-    static Columns *columns_table;
+    static Columns* columns_table;
 
 private:
     // keep a cache of all the tables we've instantiated so far
-    static std::map<Identifier, DbRelation *> table_cache;
+    static std::map<Identifier, DbRelation*> table_cache;
 };
 
 
@@ -93,16 +93,17 @@ public:
     // HeapTable overrides
     virtual void create();
 
-    virtual Handle insert(const ValueDict *row);
+    virtual Handle insert(const ValueDict* row);
 
 protected:
     // hard-coded columns for the _columns table
-    static ColumnNames &COLUMN_NAMES();
+    static ColumnNames& COLUMN_NAMES();
 
-    static ColumnAttributes &COLUMN_ATTRIBUTES();
+    static ColumnAttributes& COLUMN_ATTRIBUTES();
 };
 
-typedef ColumnNames IndexNames;
+
+using IndexNames = ColumnNames;
 
 class Indices : public HeapTable {
 public:
@@ -126,8 +127,8 @@ public:
      *                        requested index is a btree index
      * @param is_unique       search key for this index is a key for the relation
      */
-    virtual void get_columns(Identifier table_name, Identifier index_name, ColumnNames &column_names, bool &is_hash,
-                             bool &is_unique);
+    virtual void get_columns(Identifier table_name, Identifier index_name, ColumnNames& column_names, bool& is_hash,
+                             bool& is_unique);
 
     /**
      * Get the instantiated DbIndex for the given index.
@@ -135,7 +136,7 @@ public:
      * @param index_name  name of index (unique by table)
      * @returns           DbIndex for requested index
      */
-    virtual DbIndex &get_index(Identifier table_name, Identifier index_name);
+    virtual DbIndex& get_index(Identifier table_name, Identifier index_name);
 
     /**
      * Get the list of indices on a given table.
@@ -145,15 +146,15 @@ public:
     virtual IndexNames get_index_names(Identifier table_name);
 
     // overrides
-    virtual Handle insert(const ValueDict *row);
+    virtual Handle insert(const ValueDict* row);
 
     virtual void del(Handle handle);
 
 protected:
-    static ColumnNames &COLUMN_NAMES();
+    static ColumnNames& COLUMN_NAMES();
 
-    static ColumnAttributes &COLUMN_ATTRIBUTES();
+    static ColumnAttributes& COLUMN_ATTRIBUTES();
 
 private:
-    static std::map<std::pair<Identifier, Identifier>, DbIndex *> index_cache;
+    static std::map<std::pair<Identifier, Identifier>, DbIndex*> index_cache;
 };
