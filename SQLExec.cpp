@@ -87,11 +87,32 @@ QueryResult* SQLExec::execute(const SQLStatement* statement) {
 }
 
 QueryResult* SQLExec::insert(const InsertStatement* statement) {
-    return new QueryResult("INSERT statement not yet implemented");  // FIXME
-}
-
-QueryResult* SQLExec::del(const DeleteStatement* statement) {
-    return new QueryResult("DELETE statement not yet implemented");  // FIXME
+    Identifier table_name = statement->tableName;
+    DbRelation& table = SQLExec::tables->get_table(table_name);
+    ValueDict row;
+    size_t columns_n = statement->columns->size();
+    for (size_t i = 0; i < columns_n; i++) {
+        Identifier column = (*statement->columns)[i];
+        Expr* value = (*statement->values)[i];
+        switch (value->type) {
+            case kExprLiteralInt:
+                row[column] = Value(value->ival);
+                break;
+            case kExprLiteralString:
+                row[column] = Value(value->name);
+                break;
+            default:
+                throw SQLExecError("column attribute unrecognized");
+        }
+    }
+    Handle insertion = table.insert(&row);
+    IndexNames indices = SQLExec::indices->get_index_names(table_name);
+    for (const Identifier& idx : indices) {
+        DbIndex &index = SQLExec::indices->get_index(table_name, idx);
+        index.insert(insertion);
+    }
+    string suffix = indices.size() ? " and from " + to_string(indices.size()) + (indices.size() > 1 ? " indices" : " index") : "";
+    return new QueryResult("successfully inserted 1 row into " + table_name + suffix);
 }
 
 void get_where_conjunction(const Expr* where, ValueDict* conjunction) {
@@ -116,6 +137,11 @@ ValueDict* get_where_conjunction(const Expr* where) {
     ValueDict* conjunction = new ValueDict();
     get_where_conjunction(where, conjunction);
     return conjunction;
+}
+
+
+QueryResult* SQLExec::del(const DeleteStatement* statement) {
+    return new QueryResult("DELETE statement not yet implemented");  // FIXME
 }
 
 QueryResult* SQLExec::select(const SelectStatement* statement) {
