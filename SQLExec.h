@@ -9,6 +9,7 @@
 #include <string>
 #include "SQLParser.h"
 #include "schema_tables.h"
+#include "EvalPlan.h"
 
 /**
  * @class SQLExecError - exception for SQLExec methods

@@ -94,8 +94,57 @@ QueryResult* SQLExec::del(const DeleteStatement* statement) {
     return new QueryResult("DELETE statement not yet implemented");  // FIXME
 }
 
+void get_where_conjunction(const Expr* where, ValueDict* conjunction) {
+    if (where->opType == Expr::OperatorType::AND) {
+        get_where_conjunction(where->expr, conjunction);
+        get_where_conjunction(where->expr2, conjunction);
+    } else if (where->opType == Expr::OperatorType::SIMPLE_OP && where->opChar == '=') {
+        switch (where->expr2->type) {
+            case kExprLiteralInt:
+                (*conjunction)[where->expr->name] = Value(where->expr2->ival);
+                break;
+            case kExprLiteralString:
+                (*conjunction)[where->expr->name] = Value(where->expr2->name);
+                break;
+            default:
+                throw SQLExecError("unrecognized expression");
+        }
+    }
+}
+
+ValueDict* get_where_conjunction(const Expr* where) {
+    ValueDict* conjunction = new ValueDict();
+    get_where_conjunction(where, conjunction);
+    return conjunction;
+}
+
 QueryResult* SQLExec::select(const SelectStatement* statement) {
-    return new QueryResult("SELECT statement not yet implemented");  // FIXME
+    Identifier table_name = statement->fromTable->getName();
+    DbRelation& table = SQLExec::tables->get_table(table_name);
+    ColumnNames* cn = new ColumnNames();
+    for (const Expr* expr : *statement->selectList) {
+        if (expr->type == kExprStar)
+            for (const Identifier& col : table.get_column_names())
+                cn->push_back(col);
+        else
+            cn->push_back(expr->name);
+    }
+
+    // start base of plan at a TableScan
+    EvalPlan* plan = new EvalPlan(table);
+
+    // enclose in selection if where clause exists
+    if (statement->whereClause)
+        plan = new EvalPlan(get_where_conjunction(statement->whereClause), plan);
+    
+    // wrap in project
+    plan = new EvalPlan(cn, plan);
+
+    // optimize and evaluate
+    plan = plan->optimize();
+    ValueDicts* rows = plan->evaluate();
+    delete plan;
+    return new QueryResult(cn, table.get_column_attributes(*cn), rows, "successfully return " + to_string(rows->size()) + " rows");
 }
 
 void SQLExec::column_definition(const ColumnDefinition* col, Identifier& column_name, ColumnAttribute& column_attribute) {
@@ -221,7 +270,7 @@ QueryResult* SQLExec::drop_table(const DropStatement* statement) {
     if (table_name == Tables::TABLE_NAME || table_name == Columns::TABLE_NAME || table_name == Indices::TABLE_NAME)
         throw SQLExecError("Cannot drop a schema table!");
     ValueDict where = {{"table_name", Value(table_name)}};
-    Handles* tabMeta(SQLExec::tables->select(&where));
+    Handles* tabMeta = SQLExec::tables->select(&where);
     if (tabMeta->empty())
         throw SQLExecError("Attempting to drop non-existent table " + table_name);
 
@@ -259,7 +308,7 @@ QueryResult* SQLExec::drop_index(const DropStatement* statement) {
         {"table_name", Value(table_name)},
         {"index_name", Value(index_name)}
     };
-    Handles* idxMeta(SQLExec::indices->select(&where));
+    Handles* idxMeta = SQLExec::indices->select(&where);
     if (idxMeta->empty())
         throw SQLExecError("Attempting to drop non-existent index " + index_name + " on " + table_name);
 
