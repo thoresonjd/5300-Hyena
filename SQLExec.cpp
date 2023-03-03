@@ -92,7 +92,9 @@ QueryResult* SQLExec::insert(const InsertStatement* statement) {
     // check table exists
     ValueDict where = {{"table_name", Value(table_name)}};
     Handles* tabMeta = SQLExec::tables->select(&where);
-    if (tabMeta->empty())
+    bool tableExists = !tabMeta->empty();
+    delete tabMeta;
+    if (!tableExists)
         throw SQLExecError("attempting to insert into non-existent table " + table_name);
     DbRelation& table = SQLExec::tables->get_table(table_name);
     
@@ -156,7 +158,9 @@ QueryResult* SQLExec::del(const DeleteStatement* statement) {
     // check table exists
     ValueDict where = {{"table_name", Value(table_name)}};
     Handles* tabMeta = SQLExec::tables->select(&where);
-    if (tabMeta->empty())
+    bool tableExists = !tabMeta->empty();
+    delete tabMeta;
+    if (!tableExists)
         throw SQLExecError("attempting to delete from non-existent table " + table_name);
     DbRelation& table = SQLExec::tables->get_table(table_name);
     
@@ -178,6 +182,8 @@ QueryResult* SQLExec::del(const DeleteStatement* statement) {
     size_t rows_n = handles->size();
     size_t indices_n = indices.size();
     string suffix = indices_n ? " and from " + to_string(indices_n) + " indices" : "";
+    delete plan;
+    delete handles;
     return new QueryResult("successfully deleted " + to_string(rows_n) + " rows" + suffix);
 }
 
@@ -187,7 +193,9 @@ QueryResult* SQLExec::select(const SelectStatement* statement) {
     // check table exists
     ValueDict where = {{"table_name", Value(table_name)}};
     Handles* tabMeta = SQLExec::tables->select(&where);
-    if (tabMeta->empty())
+    bool tableExists = !tabMeta->empty();
+    delete tabMeta;
+    if (!tableExists)
         throw SQLExecError("attempting to select from non-existent table " + table_name);
     DbRelation& table = SQLExec::tables->get_table(table_name);
     ColumnNames* cn = new ColumnNames();
@@ -342,7 +350,9 @@ QueryResult* SQLExec::drop_table(const DropStatement* statement) {
 
     // check table exists
     Handles* tabMeta = SQLExec::tables->select(&where);
-    if (tabMeta->empty())
+    bool tableExists = !tabMeta->empty();
+    delete tabMeta;
+    if (!tableExists)
         throw SQLExecError("attempting to drop non-existent table " + table_name);
 
     // before dropping the table, drop each index on the table
@@ -382,7 +392,9 @@ QueryResult* SQLExec::drop_index(const DropStatement* statement) {
 
     // check index exists
     Handles* idxMeta = SQLExec::indices->select(&where);
-    if (idxMeta->empty())
+    bool indexExists = !idxMeta->empty();
+    delete idxMeta;
+    if (!indexExists)
         throw SQLExecError("attempting to drop non-existent index " + index_name + " on " + table_name);
 
     // remove all the rows from _indices for this index
