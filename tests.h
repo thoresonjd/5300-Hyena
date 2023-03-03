@@ -445,10 +445,55 @@ bool test_drop_index() {
         return false;
     std::cout << *result << std::endl;
     std::string message = result->get_message();
-    if (message != "dropped index chicken")
+    if (message != "dropped index chicken on egg")
         return false;
     delete result;
     std::cout << "drop index ok\n";
+    return true;
+}
+
+bool test_select(std::size_t nExpectedRows) {
+    std::cout << "\n=====================\n";
+    std::string sql = "select yolk, white, shell from egg where yolk = \"yellow\" and shell = 2";
+    QueryResult* result = parse(sql);
+    if (!result)
+        return false;
+    std::cout << *result << std::endl;
+    ValueDicts* rows = result->get_rows();
+    if (rows->size() != nExpectedRows)
+        return false;
+    delete result;
+    std::cout << "select ok\n";
+    return true;
+}
+
+bool test_insert() {
+    std::cout << "\n=====================\n";
+    std::string sql = "insert into egg (yolk, white, shell) values (\"yellow\", 1, 2)";
+    QueryResult* result = parse(sql);
+    if (!result)
+        return false;
+    std::cout << *result << std::endl;
+     std::string message = result->get_message();
+    if (message != "successfully inserted 1 row into egg and into 1 indices")
+        return false;
+    delete result;
+    std::cout << "insert ok\n";
+    return true;
+}
+
+bool test_delete() {
+    std::cout << "\n=====================\n";
+    std::string sql = "delete from egg where yolk = \"yellow\" and shell = 2";
+    QueryResult* result = parse(sql);
+    if (!result)
+        return false;
+    std::cout << *result << std::endl;
+     std::string message = result->get_message();
+    if (message != "successfully deleted 1 rows and from 1 indices")
+        return false;
+    delete result;
+    std::cout << "delete ok\n";
     return true;
 }
 
@@ -457,51 +502,43 @@ bool test_drop_index() {
  * @return true if all tests succeed
  */
 bool test_sql_exec() {
-    // test show columns
-    if (!test_show_columns_from_schema_tables())
-        return false;
+    return 
+        // test show columns
+        test_show_columns_from_schema_tables()
+        
+        // test create table
+        && test_show_tables(0)
+        && test_create_table()
+        && test_show_tables(1)
 
-    // test create table
-    if (!test_show_tables(0))
-        return false;
-    if (!test_create_table())
-        return false;
-    if (!test_show_tables(1))
-        return false;
-    
-    // test create index
-    if (!test_show_index(0))
-        return false;
-    if (!test_create_index())
-        return false;
-    if (!test_show_index(2))
-        return false;
-    
-    // test drop index
-    if (!test_drop_index())
-        return false;
-    if (!test_show_index(0))
-        return false;
-    
-    // test drop table
-    if (!test_drop_table())
-        return false;
-    if (!test_show_tables(0))
-        return false;
-    
-    // test indices dropped on drop table
-    if (!test_create_table())
-        return false;
-    if (!test_create_index())
-        return false;
-    if (!test_show_index(2))
-        return false;
-    if (!test_drop_table())
-        return false;
-    if (!test_show_tables(0))
-        return false;
-    if (!test_show_index(0))
-        return false;
+        // test create index
+        && test_show_index(0)
+        && test_create_index()
+        && test_show_index(2)
 
-    return true;
+        // test drop index
+        && test_drop_index()
+        && test_show_index(0)
+    
+        // test drop table
+        && test_drop_table()
+        && test_show_tables(0)
+    
+        // test indices dropped on drop table
+        && test_create_table()
+        && test_create_index()
+        && test_show_index(2)
+        && test_drop_table()
+        && test_show_tables(0)
+        && test_show_index(0)
+
+        // test select, insert, and delete
+        && test_create_table()
+        && test_create_index()
+        && test_select(0)
+        && test_insert()
+        && test_select(1)
+        && test_delete()
+        && test_select(0)
+        && test_drop_table();
 }

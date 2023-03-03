@@ -111,7 +111,7 @@ QueryResult* SQLExec::insert(const InsertStatement* statement) {
         DbIndex &index = SQLExec::indices->get_index(table_name, idx);
         index.insert(insertion);
     }
-    string suffix = indices.size() ? " and from " + to_string(indices.size()) + (indices.size() > 1 ? " indices" : " index") : "";
+    string suffix = indices.size() ? " and into " + to_string(indices.size()) + " indices" : "";
     return new QueryResult("successfully inserted 1 row into " + table_name + suffix);
 }
 
@@ -165,7 +165,7 @@ QueryResult* SQLExec::del(const DeleteStatement* statement) {
 
     size_t rows_n = handles->size();
     size_t indices_n = indices.size();
-    string suffix = indices_n ? " and from " + to_string(indices_n) + (indices_n > 1 ? " indices" : " index") : "";
+    string suffix = indices_n ? " and from " + to_string(indices_n) + " indices" : "";
     return new QueryResult("successfully deleted " + to_string(rows_n) + " rows" + suffix);
 }
 
