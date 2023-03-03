@@ -100,9 +100,10 @@ QueryResult* SQLExec::insert(const InsertStatement* statement) {
     
     // create row
     ValueDict row;
-    size_t columns_n = statement->columns->size();
-    for (size_t i = 0; i < columns_n; i++) {
-        Identifier column = (*statement->columns)[i];
+    const ColumnNames& cn = table.get_column_names();
+    size_t values_n = statement->values->size();
+    for (size_t i = 0; i < values_n; i++) {
+        Identifier column = cn[i];
         Expr* value = (*statement->values)[i];
         switch (value->type) {
             case kExprLiteralInt:
