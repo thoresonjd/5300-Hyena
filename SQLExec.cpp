@@ -88,7 +88,15 @@ QueryResult* SQLExec::execute(const SQLStatement* statement) {
 
 QueryResult* SQLExec::insert(const InsertStatement* statement) {
     Identifier table_name = statement->tableName;
+
+    // check table exists
+    ValueDict where = {{"table_name", Value(table_name)}};
+    Handles* tabMeta = SQLExec::tables->select(&where);
+    if (tabMeta->empty())
+        throw SQLExecError("attempting to insert into non-existent table " + table_name);
     DbRelation& table = SQLExec::tables->get_table(table_name);
+    
+    // create row
     ValueDict row;
     size_t columns_n = statement->columns->size();
     for (size_t i = 0; i < columns_n; i++) {
@@ -105,6 +113,8 @@ QueryResult* SQLExec::insert(const InsertStatement* statement) {
                 throw SQLExecError("column attribute unrecognized");
         }
     }
+
+    // insert into table and existing indices
     Handle insertion = table.insert(&row);
     IndexNames indices = SQLExec::indices->get_index_names(table_name);
     for (const Identifier& idx : indices) {
@@ -142,16 +152,18 @@ ValueDict* get_where_conjunction(const Expr* where) {
 
 QueryResult* SQLExec::del(const DeleteStatement* statement) {
     Identifier table_name = statement->tableName;
+
+    // check table exists
+    ValueDict where = {{"table_name", Value(table_name)}};
+    Handles* tabMeta = SQLExec::tables->select(&where);
+    if (tabMeta->empty())
+        throw SQLExecError("attempting to delete from non-existent table " + table_name);
     DbRelation& table = SQLExec::tables->get_table(table_name);
-
-    // start base of plan at a TableScan
+    
+    // evaluation plan
     EvalPlan* plan = new EvalPlan(table);
-
-    // enclose in selection if expression exists
     if (statement->expr)
         plan = new EvalPlan(get_where_conjunction(statement->expr), plan);
-
-    // optimize
     plan = plan->optimize();
 
     // get handles to remove tuples from table and indices
@@ -171,6 +183,12 @@ QueryResult* SQLExec::del(const DeleteStatement* statement) {
 
 QueryResult* SQLExec::select(const SelectStatement* statement) {
     Identifier table_name = statement->fromTable->getName();
+
+    // check table exists
+    ValueDict where = {{"table_name", Value(table_name)}};
+    Handles* tabMeta = SQLExec::tables->select(&where);
+    if (tabMeta->empty())
+        throw SQLExecError("attempting to select from non-existent table " + table_name);
     DbRelation& table = SQLExec::tables->get_table(table_name);
     ColumnNames* cn = new ColumnNames();
     for (const Expr* expr : *statement->selectList) {
@@ -321,9 +339,11 @@ QueryResult* SQLExec::drop_table(const DropStatement* statement) {
     if (table_name == Tables::TABLE_NAME || table_name == Columns::TABLE_NAME || table_name == Indices::TABLE_NAME)
         throw SQLExecError("Cannot drop a schema table!");
     ValueDict where = {{"table_name", Value(table_name)}};
+
+    // check table exists
     Handles* tabMeta = SQLExec::tables->select(&where);
     if (tabMeta->empty())
-        throw SQLExecError("Attempting to drop non-existent table " + table_name);
+        throw SQLExecError("attempting to drop non-existent table " + table_name);
 
     // before dropping the table, drop each index on the table
     Handles* selected = SQLExec::indices->select(&where);
@@ -359,9 +379,11 @@ QueryResult* SQLExec::drop_index(const DropStatement* statement) {
         {"table_name", Value(table_name)},
         {"index_name", Value(index_name)}
     };
+
+    // check index exists
     Handles* idxMeta = SQLExec::indices->select(&where);
     if (idxMeta->empty())
-        throw SQLExecError("Attempting to drop non-existent index " + index_name + " on " + table_name);
+        throw SQLExecError("attempting to drop non-existent index " + index_name + " on " + table_name);
 
     // remove all the rows from _indices for this index
     Handles* selected = SQLExec::indices->select(&where);
