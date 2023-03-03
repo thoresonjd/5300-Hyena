@@ -1,5 +1,9 @@
 # 5300-Hyena
 
+DB Relation Manager project for CPSC5300 at Seattle U, Winter 2023, Project Hyena
+
+The relation manager utilizes the [Hyrise SQL Parser for C++](https://github.com/hyrise/sql-parser) for parsing SQL statements and [Berkeley DB](https://www.oracle.com/database/technologies/related/berkeleydb.html) for managing database files.
+
 ## **Sprint Otoño**
 
 Milestone 3
