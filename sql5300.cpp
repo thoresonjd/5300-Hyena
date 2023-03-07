@@ -87,6 +87,7 @@ void handleSQL(std::string sql) {
     else if (sql == TEST) {
         cout << "test_heap_storage: " << (test_heap_storage() ? "Passed" : "Failed") << endl;
         cout << "test_sql_exec: " << (test_sql_exec() ? "Passed" : "Failed") << endl;
+        cout << "test_btree: " << (test_btree() ? "Passed" : "Failed") << endl;
     } else
         cerr << "invalid SQL: " << sql << endl << parsedSQL->errorMsg() << endl;
     delete parsedSQL;

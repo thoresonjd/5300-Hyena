@@ -81,6 +81,23 @@ RecordIDs* SlottedPage::ids(void) const {
     return record_ids;
 }
 
+void SlottedPage::clear() {
+    this->num_records = 0;
+    this->end_free = DbBlock::BLOCK_SZ - 1;
+    put_header();
+}
+
+u16 SlottedPage::size() const {
+    u16 size, loc;
+    u16 count = 0;
+    for (RecordID record_id = 1; record_id <= this->num_records; record_id++) {
+        get_header(size, loc, record_id);
+        if (loc != 0)
+            count++;
+    }
+    return count;
+}
+
 void SlottedPage::get_header(u16& size, u16& loc, RecordID id) const {
     size = this->get_n((u16) 4 * id);
     loc = this->get_n((u16) (4 * id + 2));
@@ -96,7 +113,17 @@ void SlottedPage::put_header(RecordID id, u16 size, u16 loc) {
 }
 
 bool SlottedPage::has_room(u16 size) const {
-    return 4 * (this->num_records + 1) + size <= this->end_free;
+    return size + (u16)4 <= this->unused_bytes();
+}
+
+u16 SlottedPage::unused_bytes() const {
+    u16 headers = (u16) (4 * (this->num_records + 1));
+    u16 unused;
+    if (this->end_free <= headers)
+        unused = 0;
+    else
+        unused = this->end_free - headers;
+    return unused;
 }
 
 void SlottedPage::slide(u_int16_t start, u_int16_t end) {

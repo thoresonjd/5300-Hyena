@@ -9,7 +9,7 @@ INCLUDE_DIR = $(COURSE)/include
 LIB_DIR = $(COURSE)/lib
 
 # Rule for linking to create executable
-OBJS = sql5300.o SlottedPage.o HeapFile.o HeapTable.o ParseTreeToString.o SQLExec.o schema_tables.o storage_engine.o EvalPlan.o
+OBJS = sql5300.o SlottedPage.o HeapFile.o HeapTable.o ParseTreeToString.o SQLExec.o schema_tables.o storage_engine.o EvalPlan.o BTreeNode.o btree.o
 sql5300 : $(OBJS)
 	g++ -L$(LIB_DIR) -o $@ $^ -ldb_cxx -lsqlparser
 
@@ -18,6 +18,8 @@ EVAL_PLAN_H = EvalPlan.h storage_engine.h
 HEAP_STORAGE_H = heap_storage.h SlottedPage.h HeapFile.h HeapTable.h storage_engine.h
 SCHEMA_TABLES_H = schema_tables.h $(HEAP_STORAGE_H)
 SQLEXEC_H = SQLExec.h $(SCHEMA_TABLES_H)
+BTREE_NODE_H = BTreeNode.h storage_engine.h $(HEAP_STORAGE_H)
+BTREE_H = btree.h $(BTREE_NODE_H)
 ParseTreeToString.o : ParseTreeToString.h
 SQLExec.o : $(SQLEXEC_H)
 SlottedPage.o : SlottedPage.h
@@ -27,6 +29,8 @@ schema_tables.o : $(SCHEMA_TABLES_) ParseTreeToString.h
 sql5300.o : $(SQLEXEC_H) ParseTreeToString.h
 storage_engine.o : storage_engine.h
 EvalPlan.o : $(EVAL_PLAN_H)
+BTreeNode.o : $(BTREE_NODE_H)
+btree.o : $(BTREE_H)
 
 # General rule for compilation
 %.o : %.cpp

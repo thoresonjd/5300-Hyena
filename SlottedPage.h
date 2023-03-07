@@ -65,9 +65,26 @@ public:
      */
     virtual RecordIDs* ids(void) const;
 
+    /**
+     * Erase all the records
+     */
+    virtual void clear();
+
+    /**
+     * Count of non-deleted records
+     * @return number of current records
+     */
+    virtual u_int16_t size() const;
+
+    /**
+     * Get the number of bytes not currently used to store data or for overhead.
+     * @return number of bytes
+     */
+    virtual u_int16_t unused_bytes() const;
+
+protected:
     u_int16_t num_records;
     u_int16_t end_free;
-protected:
 
     /**
      * Retrieves the header (size and location) of the record within a slotted page
