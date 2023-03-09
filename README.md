@@ -61,5 +61,5 @@ If any issues arise, first try clearing out all the files within the database en
 
 Checking for memory leaks can be done with [Valgrind](https://valgrind.org/). Valgrind error suppressions have been configured in the [`valgrind.supp`](./valgrind.supp) file. A target within the Makefile has been configured with relevant flags to execute Valgrind via running the command: 
 ```
-$ make check
+$ make valgrind
 ```
