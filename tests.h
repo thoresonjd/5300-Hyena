@@ -688,7 +688,7 @@ bool test_btree() {
     //     std::cout << "delete everything failed: " << count_i << std::endl;
     //     return false;
     // }
-    // index.drop();
-    // table.drop();
+    index.drop();
+    table.drop();
     return true;
 }
