@@ -28,6 +28,10 @@ SELECT * FROM table WHERE col_1 = 1 AND col_n = "three";
 SELECT col_1, col_2 FROM table;
 ```
 
+### **Milestone 6: B+ Tree Index**
+
+Implementation of B+ tree index insertion and lookup
+
 ### **Compilation**
 
 To compile, execute the [`Makefile`](./Makefile) via:
