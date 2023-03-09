@@ -37,7 +37,7 @@ btree.o : $(BTREE_H)
 	g++ -I$(INCLUDE_DIR) $(CCFLAGS) -o $@ $<
 
 # Compile sql5300 and check for errors
-check : sql5300
+valgrind : sql5300
 	valgrind $(VGFLAGS) ./$< ~/cpsc5300/data
 
 # Rule for removing all non-source files
