@@ -9,11 +9,11 @@
 #include "storage_engine.h"
 #include "heap_storage.h"
 
-typedef std::vector<ColumnAttribute::DataType> KeyProfile;
-typedef std::vector<Value> KeyValue;
-typedef std::vector<KeyValue *> KeyValues;
-typedef std::vector<BlockID> BlockPointers;
-typedef std::pair<BlockID, KeyValue> Insertion;
+using KeyProfile = std::vector<ColumnAttribute::DataType>;
+using KeyValue = std::vector<Value>;
+using KeyValues = std::vector<KeyValue *>;
+using BlockPointers = std::vector<BlockID>;
+using Insertion = std::pair<BlockID, KeyValue>;
 
 class BTreeNode {
 public:

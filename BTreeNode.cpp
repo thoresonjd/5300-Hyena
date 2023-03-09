@@ -13,11 +13,8 @@ using namespace std;
  * BTreeNode base class *
  ************************/
 
-BTreeNode::BTreeNode(HeapFile &file, BlockID block_id, const KeyProfile &key_profile, bool create) : block(nullptr),
-                                                                                                     file(file),
-                                                                                                     id(block_id),
-                                                                                                     key_profile(
-                                                                                                             key_profile) {
+BTreeNode::BTreeNode(HeapFile &file, BlockID block_id, const KeyProfile &key_profile, bool create) 
+    : block(nullptr), file(file), id(block_id), key_profile(key_profile) {
     if (create) {
         this->block = file.get_new();
         this->id = this->block->get_block_id();
@@ -151,19 +148,13 @@ Dbt *BTreeNode::marshal_key(const KeyValue *key) {
  * BTreeStat statistics block *
  ******************************/
 
-BTreeStat::BTreeStat(HeapFile &file, BlockID stat_id, BlockID new_root, const KeyProfile &key_profile) : BTreeNode(file,
-                                                                                                                   stat_id,
-                                                                                                                   key_profile,
-                                                                                                                   false),
-                                                                                                         root_id(new_root),
-                                                                                                         height(1) {
+BTreeStat::BTreeStat(HeapFile &file, BlockID stat_id, BlockID new_root, const KeyProfile &key_profile) 
+    : BTreeNode(file, stat_id, key_profile, false), root_id(new_root), height(1) {
     save();
 }
 
-BTreeStat::BTreeStat(HeapFile &file, BlockID stat_id, const KeyProfile &key_profile) : BTreeNode(file, stat_id,
-                                                                                                 key_profile, false),
-                                                                                       root_id(get_block_id(ROOT)),
-                                                                                       height(get_block_id(HEIGHT)) {
+BTreeStat::BTreeStat(HeapFile &file, BlockID stat_id, const KeyProfile &key_profile)
+    : BTreeNode(file, stat_id, key_profile, false), root_id(get_block_id(ROOT)), height(get_block_id(HEIGHT)) {
 }
 
 void BTreeStat::save() {
@@ -353,12 +344,8 @@ ostream &operator<<(ostream &out, const BTreeInterior &node) {
  * BTreeLeaf *
  *************/
 
-BTreeLeaf::BTreeLeaf(HeapFile &file, BlockID block_id, const KeyProfile &key_profile, bool create) : BTreeNode(file,
-                                                                                                               block_id,
-                                                                                                               key_profile,
-                                                                                                               create),
-                                                                                                     next_leaf(0),
-                                                                                                     key_map() {
+BTreeLeaf::BTreeLeaf(HeapFile &file, BlockID block_id, const KeyProfile &key_profile, bool create)
+    : BTreeNode(file, block_id, key_profile, create), next_leaf(0), key_map() {
     if (!create) {
         RecordIDs *record_id_list = this->block->ids();
         RecordID i = 1;
@@ -464,8 +451,8 @@ Insertion BTreeLeaf::insert(const KeyValue *key, Handle handle) {
             }
             i++;
         }
-        cout << "splitting leaf " << id << ", new sibling " << nleaf->id; // DEBUG
-        cout << " starting at value " << boundary[0] << endl; // DEBUG
+        //cout << "splitting leaf " << id << ", new sibling " << nleaf->id; // DEBUG
+        //cout << " starting at value " << boundary[0] << endl; // DEBUG
 
         nleaf->save();
         this->save();
